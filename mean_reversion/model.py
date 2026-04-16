@@ -1,14 +1,12 @@
 """
-Train Random Forest and Logistic Regression classifiers to predict
-next-day reversion probability from 8 CAPM-residual features.
-Selects the best model by validation AUC and saves it to disk.
+Train a Logistic Regression classifier to predict next-day reversion probability
+from 8 CAPM-residual features.
 """
 
 import pickle
 import numpy as np
 import pandas as pd
 from pathlib import Path
-from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import roc_auc_score, log_loss, accuracy_score
 from sklearn.preprocessing import StandardScaler
@@ -48,49 +46,24 @@ def train(features: pd.DataFrame, targets: pd.Series) -> dict:
 
     X_train, y_train, X_val, y_val = split(features, targets)
 
-    # Logistic Regression needs scaled features
     scaler = StandardScaler()
     X_train_sc = scaler.fit_transform(X_train)
     X_val_sc   = scaler.transform(X_val)
 
-    models = {
-        "RandomForest": RandomForestClassifier(
-            n_estimators=300,
-            max_depth=6,
-            min_samples_leaf=50,
-            n_jobs=-1,
-            random_state=42,
-        ),
-        "LogisticRegression": LogisticRegression(
-            C=0.1,
-            max_iter=1000,
-            random_state=42,
-        ),
-    }
+    print("Training Logistic Regression...")
+    clf = LogisticRegression(C=0.1, max_iter=1000, random_state=42)
+    clf.fit(X_train_sc, y_train)
 
-    results = {}
-    for name, clf in models.items():
-        print(f"Training {name}...")
-        if name == "LogisticRegression":
-            clf.fit(X_train_sc, y_train)
-            proba = clf.predict_proba(X_val_sc)[:, 1]
-        else:
-            clf.fit(X_train, y_train)
-            proba = clf.predict_proba(X_val)[:, 1]
-
-        auc  = roc_auc_score(y_val, proba)
-        ll   = log_loss(y_val, proba)
-        acc  = accuracy_score(y_val, (proba > 0.5).astype(int))
-        print(f"  {name}: AUC={auc:.4f}  LogLoss={ll:.4f}  Acc={acc:.4f}")
-        results[name] = {"clf": clf, "auc": auc}
-
-    best_name = max(results, key=lambda k: results[k]["auc"])
-    print(f"\nBest model: {best_name} (val AUC={results[best_name]['auc']:.4f})")
+    proba = clf.predict_proba(X_val_sc)[:, 1]
+    auc = roc_auc_score(y_val, proba)
+    ll  = log_loss(y_val, proba)
+    acc = accuracy_score(y_val, (proba > 0.5).astype(int))
+    print(f"  Val AUC={auc:.4f}  LogLoss={ll:.4f}  Acc={acc:.4f}")
 
     bundle = {
-        "name":    best_name,
-        "clf":     results[best_name]["clf"],
-        "scaler":  scaler if best_name == "LogisticRegression" else None,
+        "name": "LogisticRegression",
+        "clf":  clf,
+        "scaler": scaler,
         "feature_cols": FEATURE_COLS,
     }
     with open(cache, "wb") as f:

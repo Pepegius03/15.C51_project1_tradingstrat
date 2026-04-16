@@ -1,12 +1,11 @@
 """
-Construct a rank-weighted, dollar-neutral long/short portfolio.
+Construct a rank-weighted long-only portfolio.
 
 Signal logic:
-  long_score  = P(revert up) × max(-z, 0)   [depressed stock + high confidence]
-  short_score = P(revert dn) × max( z, 0)   [elevated stock + high confidence]
+  long_score = P(revert up) × max(-z, 0)   [depressed stock + high upward-reversion confidence]
 
 Sparsity filters (only trade the most significant positions):
-  |z| > Z_THRESHOLD  AND  confidence > CONF_THRESHOLD
+  z < -Z_THRESHOLD  AND  prob > PROB_THRESHOLD
 """
 
 import numpy as np
@@ -16,8 +15,8 @@ from model import predict_proba, FEATURE_COLS
 
 DATA_DIR = Path(__file__).parent / "data"
 
-Z_THRESHOLD   = 1.0   # minimum |z-score| to trade
-CONF_THRESHOLD = 0.5  # minimum confidence (prob away from 0.5)
+Z_THRESHOLD    = 1.0   # stock must be depressed: z < -Z_THRESHOLD
+PROB_THRESHOLD = 0.6  # model must predict upward reversion with this confidence
 
 
 def build_weights(features: pd.DataFrame, zscores: pd.DataFrame, bundle: dict) -> pd.DataFrame:
@@ -47,10 +46,8 @@ def build_weights(features: pd.DataFrame, zscores: pd.DataFrame, bundle: dict) -
         proba = predict_proba(bundle, day_feat[FEATURE_COLS])
         prob_s = pd.Series(proba, index=day_feat.index)
 
-        # Sparsity filter
-        abs_z = day_z.abs()
-        confidence = (prob_s - 0.5).abs()
-        mask = (abs_z > Z_THRESHOLD) & (confidence > CONF_THRESHOLD - 0.5)
+        # Sparsity filter: only depressed stocks where model predicts upward reversion
+        mask = (day_z < -Z_THRESHOLD) & (prob_s > PROB_THRESHOLD)
 
         active_tickers = mask[mask].index
         if active_tickers.empty:
@@ -60,18 +57,10 @@ def build_weights(features: pd.DataFrame, zscores: pd.DataFrame, bundle: dict) -
         z_active    = day_z[active_tickers]
         prob_active = prob_s[active_tickers]
 
-        long_score  = prob_active * (-z_active).clip(lower=0)
-        short_score = (1 - prob_active) * z_active.clip(lower=0)
+        long_score = prob_active * (-z_active)  # both factors positive by construction
 
         w = pd.Series(0.0, index=tickers)
-
-        if long_score.sum() > 0:
-            longs = long_score[long_score > 0]
-            w[longs.index] = longs / longs.sum()
-
-        if short_score.sum() > 0:
-            shorts = short_score[short_score > 0]
-            w[shorts.index] -= shorts / shorts.sum()
+        w[long_score.index] = long_score / long_score.sum()
 
         weights_list.append(w.rename(date))
 
@@ -90,4 +79,4 @@ if __name__ == "__main__":
         bundle = pickle.load(f)
     weights = build_weights(features, zscores, bundle)
     print(weights.tail())
-    print("Net exposure check (should be ~0):", weights.sum(axis=1).describe())
+    print("Daily gross exposure (should be ~1):", weights.sum(axis=1).describe())
