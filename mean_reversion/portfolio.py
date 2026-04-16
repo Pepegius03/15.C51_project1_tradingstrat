@@ -1,11 +1,12 @@
 """
-Construct a rank-weighted long-only portfolio.
+Construct a rank-weighted, dollar-neutral long/short portfolio.
 
 Signal logic:
-  long_score = P(revert up) × max(-z, 0)   [depressed stock + high upward-reversion confidence]
+  long_score  = P(revert up) × max(-z, 0)   [depressed stock + high confidence]
+  short_score = P(revert dn) × max( z, 0)   [elevated stock + high confidence]
 
 Sparsity filters (only trade the most significant positions):
-  z < -Z_THRESHOLD  AND  prob > PROB_THRESHOLD
+  |z| > Z_THRESHOLD  AND  confidence > CONF_THRESHOLD
 """
 
 import numpy as np
@@ -16,7 +17,7 @@ from model import predict_proba, FEATURE_COLS
 DATA_DIR = Path(__file__).parent / "data"
 
 Z_THRESHOLD    = 1.0   # stock must be depressed: z < -Z_THRESHOLD
-PROB_THRESHOLD = 0.6  # model must predict upward reversion with this confidence
+PROB_THRESHOLD = 0.55  # model must predict upward reversion with this confidence
 
 
 def build_weights(features: pd.DataFrame, zscores: pd.DataFrame, bundle: dict) -> pd.DataFrame:
@@ -47,7 +48,7 @@ def build_weights(features: pd.DataFrame, zscores: pd.DataFrame, bundle: dict) -
         prob_s = pd.Series(proba, index=day_feat.index)
 
         # Sparsity filter: only depressed stocks where model predicts upward reversion
-        mask = (day_z < -Z_THRESHOLD) & (prob_s > PROB_THRESHOLD)
+        mask = (day_z < -Z_THRESHOLD) & (prob_s > PROB_THRESHOLD) 
 
         active_tickers = mask[mask].index
         if active_tickers.empty:
