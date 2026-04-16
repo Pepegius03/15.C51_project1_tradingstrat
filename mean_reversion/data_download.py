@@ -13,7 +13,7 @@ START = "2013-01-01"   # extra year for 252-day rolling window burn-in
 END   = "2026-01-01"
 DATA_DIR = Path(__file__).parent / "data"
 
-EXCLUDED_TICKERS = {"WBA", "UTX"}  # not available on yfinance
+EXCLUDED_TICKERS = {"WBA", "UTX", "DOW"}  # not available on yfinance
 TICKERS = [t for t in all_ever_members if t not in EXCLUDED_TICKERS]
 
 

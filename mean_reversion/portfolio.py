@@ -17,7 +17,7 @@ from model import predict_proba, FEATURE_COLS
 DATA_DIR = Path(__file__).parent / "data"
 
 Z_THRESHOLD   = 1.0   # minimum |z-score| to trade
-CONF_THRESHOLD = 0.6  # minimum confidence (prob away from 0.5)
+CONF_THRESHOLD = 0.5  # minimum confidence (prob away from 0.5)
 
 
 def build_weights(features: pd.DataFrame, zscores: pd.DataFrame, bundle: dict) -> pd.DataFrame:
