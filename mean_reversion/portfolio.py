@@ -13,7 +13,7 @@ from pathlib import Path
 
 DATA_DIR = Path(__file__).parent / "data"
 
-Z_THRESHOLD  = 1.0   # entry: z must be below this (depressed stocks)
+Z_THRESHOLD  = 1.5   # entry: z must be below this (depressed stocks)
 TOP_N        = 3     # number of stocks to hold
 REBAL_FREQ   = 5     # trading days between rebalances (≈ weekly)
 
