@@ -10,35 +10,29 @@ import argparse
 import shutil
 from pathlib import Path
 
-DATA_DIR  = Path(__file__).parent / "data"
-MODEL_DIR = Path(__file__).parent / "models"
+DATA_DIR = Path(__file__).parent / "data"
 
 
 def main(refresh: bool = False):
     if refresh:
         print("Clearing cache...")
         shutil.rmtree(DATA_DIR, ignore_errors=True)
-        shutil.rmtree(MODEL_DIR, ignore_errors=True)
 
     # ── 1. Download ──────────────────────────────────────────────
     from data_download import download_prices, compute_returns
     prices  = download_prices()
     returns = compute_returns(prices)
 
-    # ── 2. Data prep ────────────────────────────────────────────
+    # ── 2. Data prep (z-scores) ──────────────────────────────────
     from data_prep import load_ff_factors, build_features
     ff = load_ff_factors()
-    features, targets, zscores = build_features(returns, ff)
+    _, _, zscores = build_features(returns, ff)
 
-    # ── 3. Model ────────────────────────────────────────────────
-    from model import train
-    bundle = train(features, targets)
-
-    # ── 4. Portfolio ─────────────────────────────────────────────
+    # ── 3. Portfolio ─────────────────────────────────────────────
     from portfolio import build_weights
-    weights = build_weights(features, zscores, bundle)
+    weights = build_weights(zscores)
 
-    # ── 5. Backtest ──────────────────────────────────────────────
+    # ── 4. Backtest ──────────────────────────────────────────────
     from backtest import run_backtest
     pnl = run_backtest(weights, returns)
 
