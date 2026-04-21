@@ -1,7 +1,7 @@
 import os
 
-BASE       = '/Users/giuseppeiannone/15.C51_project1_tradingstrat'
-OUTPUT_DIR = os.path.join(BASE, 'momentum_strategy', 'output_momentum')
+BASE       = r'C:\Users\henry\OneDrive - Massachusetts Institute of Technology\MIT\15.C51\Project 1 - Trading Strats'
+OUTPUT_DIR = os.path.join(BASE, 'momentum_strategy', 'output_momentum_backtest')
 FIG_DIR    = os.path.join(OUTPUT_DIR, 'figures')
 
 CACHE_DIR  = os.path.join(BASE, 'momentum_strategy', 'data', 'cache')
@@ -9,11 +9,15 @@ CACHE_DIR  = os.path.join(BASE, 'momentum_strategy', 'data', 'cache')
 os.makedirs(FIG_DIR,   exist_ok=True)
 os.makedirs(CACHE_DIR, exist_ok=True)
 
+# ── Backtest Mode ─────────────────────────────────────────────────────────────
+BACKTEST_MODE = 'test'       # 'train' or 'test'
+TEST_START    = '2023-01-01' # Out-of-sample start date
+
 # Data window
 DOWNLOAD_START = '2013-01-01'
 ANALYSIS_START = '2015-01-01'
 TRAIN_END      = '2021-12-31'
-ANALYSIS_END   = '2025-04-11'
+ANALYSIS_END   = '2026-04-17'
 
 # Core strategy parameters
 FORMATION_DAYS  = 252   # ~12 months lookback
@@ -31,7 +35,7 @@ CONSISTENCY_WEIGHT  = 0.20  # blend weight for momentum consistency vs raw retur
 # ── Multi-factor strategy ─────────────────────────────────────────────────────
 STRATEGY_NAME = 'momentum'       # 'momentum' | 'multi_factor'
 
-OUTPUT_MF_DIR = os.path.join(BASE, 'momentum_strategy', 'output_mf')
+OUTPUT_MF_DIR = os.path.join(BASE, 'momentum_strategy', 'output_momentum_backtest')
 FIG_MF_DIR    = os.path.join(OUTPUT_MF_DIR, 'figures')
 os.makedirs(FIG_MF_DIR, exist_ok=True)
 

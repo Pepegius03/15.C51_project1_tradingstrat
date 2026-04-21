@@ -6,9 +6,11 @@ Dispatches between the original momentum strategy and the new multi-factor
 market-neutral strategy based on config.STRATEGY_NAME.
 """
 
+import os
 import json
 import numpy as np
 from scipy import stats
+import pandas as pd
 
 import momentum_strategy.config as cfg
 from momentum_strategy.data.loader import load_data
@@ -61,10 +63,35 @@ def _run_multifactor(data: dict) -> tuple:
 def run():
     # ── 1. Load data ──────────────────────────────────────────────
     data = load_data()
+    
+    # ── 2. Handle OOS Testing Window ──────────────────────────────
+    mode = getattr(cfg, 'BACKTEST_MODE', 'train')
+    
+    if mode == 'test':
+        print(f"  Mode: OUT-OF-SAMPLE ({cfg.TEST_START} to {cfg.ANALYSIS_END})")
+        
+        # Pad the start date by 1 year to feed the 252-day lookback formation window.
+        # This ensures the first actual trading day lands right at TEST_START.
+        pad_start = str(int(cfg.TEST_START[:4]) - 1) + cfg.TEST_START[4:]
+        
+        # Overwrite the 'train' keys with our test slice so downstream functions work seamlessly
+        data['tri_train']     = data['tri_prices'].loc[pad_start:]
+        data['returns_train'] = data['returns'].loc[pad_start:]
+        data['tbill_train']   = data['tbill_daily'].loc[pad_start:]
+        data['dji_train']     = data['dji'].loc[pad_start:]
+        data['prices_train']  = data['prices'].loc[pad_start:]
+        
+        # Append '_oos' to output directories to prevent overwriting your train results
+        cfg.OUTPUT_DIR    = f"{cfg.OUTPUT_DIR}_oos"
+        cfg.OUTPUT_MF_DIR = f"{cfg.OUTPUT_MF_DIR}_oos"
+        os.makedirs(cfg.OUTPUT_DIR, exist_ok=True)
+        os.makedirs(cfg.OUTPUT_MF_DIR, exist_ok=True)
+    else:
+        print(f"  Mode: TRAIN-SET ({cfg.ANALYSIS_START} to {cfg.TRAIN_END})")
 
-    # ── 2. Dispatch to strategy ───────────────────────────────────
+    # ── 3. Dispatch to strategy ───────────────────────────────────
     print(f"  Strategy mode: {cfg.STRATEGY_NAME}")
-    print("  Running train-set backtest …")
+    print("  Running backtest …")
 
     if cfg.STRATEGY_NAME == 'multi_factor':
         port_ret, rebal_log, output_dir, strat_label = _run_multifactor(data)
@@ -75,13 +102,13 @@ def run():
           f"{len(rebal_log)} rebalances")
     print()
 
-    # ── 3. Align benchmark ────────────────────────────────────────
+    # ── 4. Align benchmark ────────────────────────────────────────
     dji_train        = data['dji_train']
     dji_ret          = dji_train.pct_change().dropna().reindex(port_ret.index).dropna()
     port_ret_aligned = port_ret.reindex(dji_ret.index).dropna()
     tbill_train      = data['tbill_train']
 
-    # ── 4. Performance statistics ─────────────────────────────────
+    # ── 5. Performance statistics ─────────────────────────────────
     s_strat = performance_stats(port_ret_aligned, tbill_train, strat_label)
     s_dji   = performance_stats(dji_ret,          tbill_train, "DJI Benchmark")
 
@@ -104,7 +131,7 @@ def run():
     annual_dji   = dji_ret.resample('YE').apply(lambda x: (1+x).prod()-1)
     print_annual_table(annual_strat, annual_dji)
 
-    # ── 5. Figures ────────────────────────────────────────────────
+    # ── 6. Figures ────────────────────────────────────────────────
     print("  Generating figures …")
     generate_all_figures(
         s_strat, s_dji,
@@ -114,12 +141,12 @@ def run():
         output_dir=output_dir,
     )
 
-    # ── 6. Save JSON results ──────────────────────────────────────
+    # ── 7. Save JSON results ──────────────────────────────────────
     results = {
         'strategy': {k: float(v) for k, v in s_strat.items()
                      if isinstance(v, (int, float, np.floating))},
         'benchmark': {k: float(v) for k, v in s_dji.items()
-                      if isinstance(v, (int, float, np.floating))},
+                       if isinstance(v, (int, float, np.floating))},
         'market_exposure': {
             'beta_vs_dji': float(beta_vs_dji),
             'alpha_ann'  : float(alpha_ann),

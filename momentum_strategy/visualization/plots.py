@@ -68,8 +68,7 @@ def _fig1_cumulative(s_mom, s_dji):
     s_mom['cum'].plot(ax=ax, color=BLUE,   lw=2.0, label='Momentum L/S Dollar-Neutral')
     s_dji['cum'].plot(ax=ax, color=ORANGE, lw=1.8, linestyle='--', label='DJI Benchmark')
     ax.axhline(1, color=GRAY, linestyle=':', lw=0.8, alpha=0.7)
-    ax.set_title('Cumulative Returns — Momentum L/S Dollar-Neutral vs. DJI\n'
-                 'Train Set: January 2015 – December 2021',
+    ax.set_title('Cumulative Returns — Momentum L/S Dollar-Neutral vs. DJI',
                  fontsize=13, fontweight='bold', pad=12)
     ax.set_ylabel('Growth of $1', fontsize=11)
     ax.yaxis.set_major_formatter(mticker.FuncFormatter(lambda x, _: f'${x:.2f}'))
@@ -85,7 +84,7 @@ def _fig2_drawdown(s_mom):
     s_mom['drawdown'].plot(ax=ax, color=RED, lw=1.5)
     ax.fill_between(s_mom['drawdown'].index, s_mom['drawdown'].values, 0,
                     alpha=0.25, color=RED)
-    ax.set_title('Strategy Drawdown — Train Set: 2015–2021',
+    ax.set_title('Strategy Drawdown',
                  fontsize=13, fontweight='bold', pad=10)
     ax.set_ylabel('Drawdown', fontsize=11)
     ax.yaxis.set_major_formatter(mticker.FuncFormatter(lambda x, _: f'{x*100:.0f}%'))
@@ -108,7 +107,7 @@ def _fig3_rolling_sharpe(s_mom, port_ret_aligned):
                     where=(rolling_sharpe.values > 0), alpha=0.2, color=GREEN)
     ax.fill_between(rolling_sharpe.index, rolling_sharpe.values, 0,
                     where=(rolling_sharpe.values <= 0), alpha=0.2, color=RED)
-    ax.set_title('Rolling 12-Month Sharpe Ratio — Train Set: 2015–2021',
+    ax.set_title('Rolling 12-Month Sharpe Ratio',
                  fontsize=13, fontweight='bold', pad=10)
     ax.set_ylabel('Sharpe Ratio', fontsize=11)
     ax.legend(fontsize=10)
@@ -145,7 +144,7 @@ def _fig4_monthly_heatmap(s_mom):
                 color = 'white' if abs(v) > abs_max * 0.5 else 'black'
                 ax.text(j, i, f'{v*100:.1f}%', ha='center', va='center',
                         fontsize=8, color=color, fontweight='bold')
-    ax.set_title('Monthly Returns Heatmap — Momentum L/S Dollar-Neutral (Train Set: 2015–2021)',
+    ax.set_title('Monthly Returns Heatmap — Momentum L/S Dollar-Neutral',
                  fontsize=13, fontweight='bold', pad=10)
     plt.tight_layout()
     plt.savefig(f'{_active_fig_dir}/fig4_monthly_heatmap.png', bbox_inches='tight')
@@ -169,7 +168,7 @@ def _fig5_annual_returns(annual_mom, annual_dji):
     ax.axhline(0, color='black', lw=0.8)
     ax.set_xticks(x); ax.set_xticklabels(years, fontsize=10)
     ax.set_ylabel('Annual Return (%)', fontsize=11)
-    ax.set_title('Annual Returns — Momentum Strategy vs. DJI (Train Set: 2015–2021)',
+    ax.set_title('Annual Returns — Momentum Strategy vs. DJI',
                  fontsize=13, fontweight='bold', pad=10)
     ax.legend(fontsize=10, framealpha=0.9)
     plt.tight_layout()
@@ -202,7 +201,7 @@ def _fig6_distributions(s_mom, port_ret_aligned):
         ax.text(0.97, 0.95, f'Skew = {sk:.2f}\nKurt = {ku:.2f}',
                 transform=ax.transAxes, ha='right', va='top',
                 fontsize=9, bbox=dict(boxstyle='round', facecolor='white', alpha=0.7))
-    plt.suptitle('Return Distributions — Momentum L/S Dollar-Neutral (Train Set: 2015–2021)',
+    plt.suptitle('Return Distributions — Momentum L/S Dollar-Neutral',
                  fontsize=13, fontweight='bold', y=1.01)
     plt.tight_layout()
     plt.savefig(f'{_active_fig_dir}/fig6_distributions.png', bbox_inches='tight')
@@ -221,7 +220,7 @@ def _fig7_scatter(dji_ret, port_ret_aligned, ols, beta_vs_dji, alpha_ann):
     ax.axvline(0, color=GRAY, lw=0.7)
     ax.set_xlabel('DJI Daily Return (%)', fontsize=11)
     ax.set_ylabel('Strategy Daily Return (%)', fontsize=11)
-    ax.set_title('Strategy Returns vs. DJI (Train Set)',
+    ax.set_title('Strategy Returns vs. DJI',
                  fontsize=12, fontweight='bold')
     ax.legend(fontsize=10, framealpha=0.9)
     plt.tight_layout()
@@ -235,7 +234,7 @@ def _fig8_equity_drawdown(s_mom):
     ax_cum, ax_dd = axes
     s_mom['cum'].plot(ax=ax_cum, color=BLUE, lw=2)
     ax_cum.set_ylabel('Cumulative Return ($)', fontsize=10)
-    ax_cum.set_title('Equity Curve and Drawdown — Train Set: 2015–2021',
+    ax_cum.set_title('Equity Curve and Drawdown',
                      fontsize=13, fontweight='bold')
     s_mom['drawdown'].plot(ax=ax_dd, color=RED, lw=1.3)
     ax_dd.fill_between(s_mom['drawdown'].index, s_mom['drawdown'].values, 0,
