@@ -13,7 +13,7 @@ FIG_DIR  = Path(__file__).parent / "figures"
 
 TRAIN_END = "2019-12-31"
 VAL_END   = "2022-12-31"
-TEST_END  = "2025-12-31"
+TEST_END  = "2026-04-17"
 PERIODS = {
     "Train (2014–2019)": (None, TRAIN_END),
     "Val   (2020–2022)": (TRAIN_END, VAL_END),
