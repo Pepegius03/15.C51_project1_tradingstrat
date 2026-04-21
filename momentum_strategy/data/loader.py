@@ -182,18 +182,34 @@ def load_data(force_reload: bool = False) -> dict:
         ORDER  BY date
     """, date_cols=['date'])
 
-    # ── CRSP value-weighted market index (benchmark) ─────────────
-    print("  Downloading CRSP value-weighted market index …")
-    crsp_dsi = db.raw_sql(f"""
-        SELECT date, vwretd
-        FROM   crsp_q_stock.dsi
-        WHERE  date BETWEEN '{ANALYSIS_START}' AND '{ANALYSIS_END}'
-        ORDER  BY date
-    """, date_cols=['date'])
-    crsp_dsi = crsp_dsi.set_index('date')['vwretd']
-    # Convert daily returns to a cumulative price index (base = 1.0)
-    dji       = (1 + crsp_dsi.fillna(0)).cumprod()
-    dji_train = dji.loc[:TRAIN_END]
+    # # ── CRSP value-weighted market index (benchmark) ─────────────
+    # print("  Downloading CRSP value-weighted market index …")
+    # crsp_dsi = db.raw_sql(f"""
+    #     SELECT date, vwretd
+    #     FROM   crsp_q_stock.dsi
+    #     WHERE  date BETWEEN '{ANALYSIS_START}' AND '{ANALYSIS_END}'
+    #     ORDER  BY date
+    # """, date_cols=['date'])
+    # crsp_dsi = crsp_dsi.set_index('date')['vwretd']
+    # # Convert daily returns to a cumulative price index (base = 1.0)
+    # dji       = (1 + crsp_dsi.fillna(0)).cumprod()
+    # dji_train = dji.loc[:TRAIN_END]
+
+    # ── Actual Dow Jones Industrial Average benchmark via Yahoo Finance ─────────────
+    print("  Downloading ^DJI from Yahoo Finance …")
+    
+    # Download daily closing prices for the Dow
+    dji_prices = yf.download('^DJI', start=ANALYSIS_START, end=ANALYSIS_END, progress=False)['Close']
+    
+    # Handle yfinance occasionally returning a DataFrame instead of a Series
+    if isinstance(dji_prices, pd.DataFrame):
+        dji_prices = dji_prices.iloc[:, 0]
+        
+    # Calculate daily returns and convert to a cumulative wealth index (base = 1.0)
+    # This ensures it matches the exact mathematical format your strategy engine expects
+    dji_returns = dji_prices.pct_change().fillna(0)
+    dji         = (1 + dji_returns).cumprod()
+    dji_train   = dji.loc[:TRAIN_END]
 
     # ── Compustat quarterly fundamentals ─────────────────────────
     # Derive the daily date index from CRSP before closing the connection
